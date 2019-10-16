@@ -1,0 +1,166 @@
+@Library('jenkins-shared-library@master') _
+pipeline {
+  agent any
+  options {
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
+        disableConcurrentBuilds()
+  }
+  parameters {
+        choice name: 'MODE', choices: ['Build Only', 'Build & Deploy'], description: 'Pipeline Mode'
+  		choice name: 'DEPLOY_TO_ENV', choices: ['DEV', 'STAGING', 'PRODUCTION' ], description: 'If Mode includes Deploy - Which environment to deploy to'
+        booleanParam name: 'SKIP_CODE_ANALYSIS', defaultValue: false, description: 'If Mode includes Build - Whether to run the code analysis for this build'
+  }
+  tools {
+        jdk 'JDK 8'
+        maven 'Maven 3'
+  }
+  stages {
+  
+        stage ('Initialize') {
+            steps {
+            	ciSkip action: 'check'
+            }
+            post { always { ciSkip action: 'postProcess' } }
+        }  
+        stage ('Build') {
+            when {
+                
+                anyOf {
+            		expression { params.MODE == 'Build & Deploy'}
+            		expression { params.MODE == 'Build Only' }
+            	}
+            }
+            steps {
+                cgBuild maven: [ goals: '-U clean install' ]
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: '**/target/myapp_api-*.jar', fingerprint: true
+                }
+                failure {
+                    emailext (
+                        subject: '${DEFAULT_SUBJECT}',
+                        mimeType: 'text/html',
+                        body: '${DEFAULT_CONTENT}',
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider']]
+                    )
+                }
+            }
+        }
+        
+        stage ('SonarQube Analysis') {
+            when {
+                anyOf {
+                    branch "develop"
+                    branch "release-*"
+                    branch "hotfix-*"
+                }
+                expression { !params.SKIP_CODE_ANALYSIS }
+                anyOf {
+            		expression { params.MODE == 'Build & Deploy'}
+            		expression { params.MODE == 'Build Only' }
+            	}
+            }
+            steps {
+                script {
+                	def config = config()
+                    def SQscannerHome = tool config.sonarqube_installation_tool
+                    withSonarQubeEnv(config.sonarqube_installation_name) {
+                        sh "${SQscannerHome}/bin/sonar-scanner"
+                    }
+                }
+            }
+            post {
+                failure {
+                    emailext (
+                        subject: '${DEFAULT_SUBJECT}',
+                        mimeType: 'text/html',
+                        body: '${DEFAULT_CONTENT}',
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider']]
+                    )
+                }
+            }
+        }
+		
+		stage ('Deploy DEV') {
+            when {
+            	expression { params.MODE == 'Build & Deploy'}
+            	anyOf {
+            		expression { params.DEPLOY_TO_ENV == 'DEV' }
+            		expression { params.DEPLOY_TO_ENV == 'Both DEV & QAS' }
+            	}
+            }
+            steps {
+               script{
+                	emailext (
+	                    subject: 'MyApp API DEV Deploy - STARTING',
+	                    mimeType: 'text/html',
+	                    body: 'Starting deployment of MyApp API to DEV environment.  ${BUILD_URL}<br/><br/>Deployment takes about 10 minutes to complete.',
+	                    to: '${MYAPP_DEPLOYMENT_RECIPIENT_LIST}'
+	                )								
+				}
+                // Here you add deployment logic depending on what method/tools you use for deployments
+                // Examples could be SSH Publisher plugin, AWS plugins, etc
+           	}
+			post {
+            	success {
+                    emailext (
+                        subject: 'MyApp API(S3) DEV Deploy - COMPLETE',
+                        mimeType: 'text/html',
+                        body: 'Completed deployment of MyApp API(S3) to DEV environment.  ${BUILD_URL}<br/><br/><span style="font-weight:bold">Changes Included in Deploy</span><br/><pre>${CHANGES}</pre>',
+                        to: 'STAFF-Technical@compass-usa.com,${UCD_RECIPIENT_LIST}'
+                    )
+                    postBuild action: "addBadge", args: [ buildNumber: "${BUILD_NUMBER}", icon: '/userContent/icons/16x16/star-blue.png', text: "DEV" ]
+                }
+                failure {
+                    emailext (
+                        subject: 'MyApp API DEV(S3) Deploy - FAILED',
+                        mimeType: 'text/html',
+                        body: 'Deployment of MyApp API(S3) to DEV environment failed.  ${BUILD_URL}<br/><br/><span style="font-weight:bold">Deployment Log</span><br/><pre>${BUILD_LOG, maxLines=500}</pre>',
+                        to: 'STAFF-Technical@compass-usa.com,${UCD_RECIPIENT_LIST}'
+                    )
+                }
+            }
+		}
+        
+        stage ('Deploy PRODUCTION') {
+            when {
+                
+            	    expression { params.MODE == 'Build & Deploy'}
+            		expression { params.DEPLOY_TO_ENV == 'PRODUCTION' }
+				    expression { authorizeStage() }
+            }
+            steps {
+               
+               script{
+                	emailext (
+	                    subject: 'MyApp API(S3) PRODUCTION Deploy - STARTING',
+	                    mimeType: 'text/html',
+	                    body: 'Starting deployment of MyApp API(S3) to PRODUCTION environment.  ${BUILD_URL}<br/><br/>Deployment takes about 10 minutes to complete.',
+	                    to: 'STAFF-Technical@compass-usa.com,STAFF-Functional@compass-usa.com,${UCD_RECIPIENT_LIST}'
+	                )
+												
+					}
+                }
+				post {
+                success {
+                    emailext (
+                        subject: 'MyApp API(S3) PRODUCTION Deploy - COMPLETE',
+                        mimeType: 'text/html',
+                        body: 'Completed deployment of MyApp API(S3) to PRODUCTION environment.  ${BUILD_URL}<br/><br/><span style="font-weight:bold">Changes Included in Deploy</span><br/><pre>${CHANGES}</pre>',
+                        to: 'STAFF-Technical@compass-usa.com,${UCD_RECIPIENT_LIST}'
+                    )
+                    postBuild action: "addBadge", args: [ buildNumber: "${BUILD_NUMBER}", icon: '/userContent/icons/16x16/star-red.png', text: "PRODUCTION" ]
+                }
+                failure {
+                    emailext (
+                        subject: 'MyApp API(S3) PRODUCTION Deploy - FAILED',
+                        mimeType: 'text/html',
+                        body: 'Deployment of MyApp API(S3) to PRODUCTION environment failed.  ${BUILD_URL}<br/><br/><span style="font-weight:bold">Deployment Log</span><br/><pre>${BUILD_LOG, maxLines=500}</pre>',
+                        to: 'STAFF-Technical@compass-usa.com,${UCD_RECIPIENT_LIST}'
+                    )
+                }
+            }
+		}
+	}
+ }
