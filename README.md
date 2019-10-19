@@ -1,6 +1,8 @@
+# Work in progress ...
+
 # Jenkins Shared Library : Artifactory + gitflow + SonarQube #
 
-This library provides a set (hopefully complete) of globals centered around JFrog Artifactory to automate end-to-end CI/CD process with declarative Jenkins pipelines.
+This library provides a set (hopefully complete) of globals centered around JFrog Artifactory to automate end-to-end CI/CD process with Jenkins pipelines.
 It assumes you are following the gitflow process for source code management.
 
 Required Jenkins plugins:
