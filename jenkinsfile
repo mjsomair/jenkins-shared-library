@@ -1,19 +1,8 @@
 @Library('jenkins-shared-library@master') _
 pipeline {
   agent any
-  stage ('SonarQube Analysis') {
-            when {
-                anyOf {
-                    branch "develop"
-                    branch "release-*"
-                    branch "hotfix-*"
-                }
-                expression { !params.SKIP_CODE_ANALYSIS }
-                anyOf {
-            		expression { params.MODE == 'Build & Deploy'}
-            		expression { params.MODE == 'Build Only' }
-            	}
-            }
+  stages {
+      stage ('SonarQube Analysis') {
             steps {
                 script {
                 	def config = config()
@@ -24,4 +13,5 @@ pipeline {
                 }
             }
         }
+    }
 }
