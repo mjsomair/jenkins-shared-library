@@ -1,5 +1,5 @@
 @Library('jenkins-shared-library@master') _
-import com.rc.sonarScanner;
+import com.rc.SonarScanner;
 
-sonarScanner sonarScanner = new sonarScanner();
+SonarScanner sonarScanner = new SonarScanner();
 sonarScanner.runSonarScanner();
