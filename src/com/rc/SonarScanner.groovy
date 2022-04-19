@@ -8,9 +8,9 @@ class SonarScanner {
     
     def runSonarScanner()
     {
-        def config = config()
-        def SQscannerHome = tool config.sonarqube_installation_tool
-        withSonarQubeEnv(config.sonarqube_installation_name) 
+        
+        def SQscannerHome = tool 'sonar-scanner-linux'
+        withSonarQubeEnv('SonarQube') 
         {
            bat "${SQscannerHome}/bin/sonar-scanner -Dsonar.projectKey=develop -Dsonar.sources=src"
         }
