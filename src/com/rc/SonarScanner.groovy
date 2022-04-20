@@ -1,4 +1,3 @@
-package com.rc;
 class SonarScanner 
 {
     public static runSonarScanner()
