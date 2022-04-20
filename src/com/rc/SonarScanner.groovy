@@ -1,17 +1,8 @@
 package com.rc;
-
-class SonarScanner {
-   
-
-   
-    
+class SonarScanner 
+{
     public static runSonarScanner()
-    {        
-        def SQscannerHome = tool 'sonar-scanner-linux'
-        withSonarQubeEnv('SonarQube') 
-        {
-           bat "${SQscannerHome}/bin/sonar-scanner -Dsonar.projectKey=develop -Dsonar.sources=src"
+        {        
+          sonar:sonar -Dsonar.projectKey=develop -Dsonar.sources=
         }
-    }
-    
-}
+  }
