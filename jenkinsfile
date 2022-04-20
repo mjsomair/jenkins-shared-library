@@ -11,7 +11,7 @@ pipeline
          {
            script
               {
-              SonarScanner.runSonarScanner();
+              def sc = SonarScanner.runSonarScanner();
               }
             }
          }
