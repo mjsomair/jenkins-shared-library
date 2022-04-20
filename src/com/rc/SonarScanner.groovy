@@ -3,12 +3,9 @@ package com.rc;
 class SonarScanner {
    
 
-    SonarScanner() {
-       
-    }
-
+   
     
-    def runSonarScanner()
+    public static runSonarScanner()
     {        
         def SQscannerHome = tool 'sonar-scanner-linux'
         withSonarQubeEnv('SonarQube') 
