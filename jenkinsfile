@@ -1,4 +1,7 @@
 @Library('jenkins-shared-library@master') _
+import SonarScanner
+import jenkins.model.*
+
 pipeline 
 {
   agent any 
@@ -10,6 +13,7 @@ pipeline
          {
            script
               {
+              jenkins = Jenkins.instance
               def sc = SonarScanner.runSonarScanner();
               }
             }
