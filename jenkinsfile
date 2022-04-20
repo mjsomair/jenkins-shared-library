@@ -10,8 +10,7 @@ pipeline
          {
            script
               {
-              SonarScanner sonarScanner = new SonarScanner();
-              sonarScanner.runSonarScanner();
+              SonarScanner.runSonarScanner();
               }
             }
          }
