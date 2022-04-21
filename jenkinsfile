@@ -1,5 +1,4 @@
 @Library('jenkins-shared-library@master') _
-import com.rc.SonarScanner
 pipeline 
 {
   agent any 
@@ -9,11 +8,8 @@ pipeline
       {
        steps 
          {
-           script
-              {
-              def sc = SonarScanner.runSonarScanner();
-              }
-            }
+           common("Build")
+           }
          }
     }
   }
