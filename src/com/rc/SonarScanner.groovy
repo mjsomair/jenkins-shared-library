@@ -2,6 +2,6 @@ class SonarScanner
 {
     public static runSonarScanner()
         {     
-          bat "mvn clean sonar:sonar"  
+          mvn clean sonar:sonar  
         }
   }
