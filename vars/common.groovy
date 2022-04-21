@@ -1,4 +1,5 @@
-def call(String stageName){
+def call(String stageName)
+{
   if ("${stageName}" == "Build")
      {
        sh "mvn clean package"
@@ -12,3 +13,4 @@ def call(String stageName){
      {
        sh "mvn clean deploy"
      }
+}
