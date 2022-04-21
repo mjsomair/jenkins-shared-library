@@ -1,5 +1,5 @@
 @Library('jenkins-shared-library@master') _
-import SonarScanner
+import com.rc.SonarScanner
 pipeline 
 {
   agent any 
