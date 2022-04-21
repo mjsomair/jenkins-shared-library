@@ -9,6 +9,7 @@ pipeline
        steps 
          {
            common("Build")
+           sonarscanner("Scan")
            }
          }
     }
