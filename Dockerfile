@@ -1,4 +1,4 @@
-FROM maven:3.9.2-openjdk-11 
+FROM maven:3.6.3-openjdk-11 
 COPY . /dist 
 RUN cd /dist && mvn clean install 
 WORKDIR /dist/ 
